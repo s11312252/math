@@ -32,8 +32,28 @@ def index():
     link += "<a href=/account>POST傳值</a><hr>"
     link += "<a href=/math>次方與根號計算</a><hr>"
     link += "<br><a href=/read>讀取Firestore資料</a><br>"
+    link += "<br><a href=/read2>讀取Firestore資料(以姓名關鍵字楊)</a><br>"
+
 
     return link
+
+@app.route("/read2")
+def read2():
+    Result = ""
+    keyword = "李"
+    db = firestore.client()
+    collection_ref = db.collection("靜宜資管")    
+    docs = collection_ref.get()    
+    
+    for doc in docs:
+        teacher = doc.to_dict()
+        if "name" in teacher and keyword in teacher["name"]:
+            Result += str(teacher) + "<br>"
+        
+    if Result == "":
+        Result = "找不到姓名包含「" + keyword + "」的資料。"
+        
+    return Result
 
 @app.route("/read")
 def read():
