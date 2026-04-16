@@ -8,7 +8,7 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-keyword = "楊"
+keyword = input("請輸入姓名關鍵字:")
 collection_ref = db.collection("靜宜資管")
 docs = collection_ref.get()
 

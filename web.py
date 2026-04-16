@@ -37,21 +37,23 @@ def index():
 
     return link
 
-@app.route("/read2")
+@app.route("/read2", methods=["GET", "POST"])
 def read2():
-    Result = ""
-    keyword = "李"
-    db = firestore.client()
-    collection_ref = db.collection("靜宜資管")    
-    docs = collection_ref.get()    
-    
-    for doc in docs:
-        teacher = doc.to_dict()
-        if "name" in teacher and keyword in teacher["name"]:
-            Result += str(teacher) + "<br>"
+    if request.method == "POST":
+        keyword = request.form.get("keyword")
+        db = firestore.client()
+        collection_ref = db.collection("靜宜資管")
+        docs = collection_ref.get()
         
-    if Result == "":
-        Result = "找不到姓名包含「" + keyword + "」的資料。"
+        results = []
+        for doc in docs:
+            teacher = doc.to_dict()
+            if "name" in teacher and keyword in teacher["name"]:
+                results.append(teacher)
+        
+        return render_template("searchteacher.html", keyword=keyword, results=results)
+    
+    return render_template("searchteacher.html", keyword=None, results=None)
         
     return Result
 
