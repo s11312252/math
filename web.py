@@ -32,8 +32,8 @@ def index():
     link += "<a href=/account>POST傳值</a><hr>"
     link += "<a href=/math>次方與根號計算</a><hr>"
     link += "<br><a href=/read>讀取Firestore資料</a><br>"
-    link += "<br><a href=/read2>讀取Firestore資料(以姓名關鍵字楊)</a><br>"
-
+    link += "<br><a href=/read3>讀取Firestore資料(關鍵字)</a><br>"
+    link += "<br><a href=/read2>讀取Firestore資料(根據姓名關鍵字)</a><br>"
 
     return link
 
@@ -56,6 +56,23 @@ def read2():
     return render_template("searchteacher.html", keyword=None, results=None)
         
     return Result
+
+@app.route("/read3")
+def read3():
+    Result = ""
+    keyword = "楊"
+    db = firestore.client()
+    collection_ref = db.collection("靜宜資管")
+    docs = collection_ref.get()
+    for doc in docs:        
+        teacher = doc.to_dict()
+        if "name" in teacher and keyword in teacher["name"]:
+            Result += f"姓名：{teacher.get('name')}，研究室：{teacher.get('lab')}，郵件：{teacher.get('mail')}<br>"
+   
+    if Result == "":
+        Result = "抱歉查無此關鍵字姓名之老師資料"
+   
+    return Result + "<br><a href=/>返回首頁</a>"
 
 @app.route("/read")
 def read():
