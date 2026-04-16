@@ -1,3 +1,7 @@
+import requests
+from bs4 import BeautifulSoup
+
+
 from flask import Flask, render_template,request
 
 from datetime import datetime
@@ -34,9 +38,32 @@ def index():
     link += "<br><a href=/read>讀取Firestore資料</a><br>"
     link += "<br><a href=/read3>讀取Firestore資料(關鍵字)</a><br>"
     link += "<br><a href=/read2>讀取Firestore資料(根據姓名關鍵字)</a><br>"
+    link += "<br><a href='/spider'>執行爬蟲 (課程資料)</a><hr>"
 
     return link
 
+
+@app.route("/spider")
+def spider():
+    url = "https://www1.pu.edu.tw/~tcyang/course.html"
+    Data = requests.get(url)
+    Data.encoding = "utf-8"
+    
+    sp = BeautifulSoup(Data.text, "html.parser")
+    result = sp.select(".team-box a") 
+    
+    content = "<h2>子青老師課程爬蟲結果</h2>"
+    content += "<table border='1'><tr><th>課程名稱</th><th>課程連結</th></tr>"
+    
+    for i in result:
+        name = i.text
+        link = i.get("href")
+        content += f"<tr><td>{name}</td><td><a href='{link}' target='_blank'>{link}</a></td></tr>"
+    
+    content += "</table>"
+    content += "<br><a href='/'>返回首頁</a>"
+    
+    return content
 @app.route("/read2", methods=["GET", "POST"])
 def read2():
     if request.method == "POST":
