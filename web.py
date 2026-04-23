@@ -47,24 +47,41 @@ def index():
 
 @app.route("/movie1")
 def movie():
-    R = "<h1>即將上映電影</h1><hr>"  
+    q = request.args.get("q")
 
     url = "https://www.atmovies.com.tw/movie/next/"
     Data = requests.get(url)
     Data.encoding = "utf-8"
-
     sp = BeautifulSoup(Data.text, "html.parser")
     result = sp.select(".filmListAllX li")
-    
+
+    R = "<h1>即將上映電影查詢</h1>"
+    R += f"""
+    <form action="/movie1" method="get">
+        <input type="text" name="q" placeholder="輸入片名關鍵字" value="{q if q else ''}">
+        <button type="submit">搜尋</button>
+    </form>
+    <hr>
+    """
+
+    found_count = 0
     for item in result:
         try:
-            R += "電影名稱：" + item.find("img").get("alt") + "<br>"
-            R += "介紹連結：<a href='https://www.atmovies.com.tw" + item.find("a").get("href") + "'>點我觀看</a><br>"
-            R += "<img src='https://www.atmovies.com.tw" + item.find("img").get("src") + "' width='150'><br><br>"
-        except:
-            continue 
+            alt_text = item.find("img").get("alt")
             
-    return R + "<br><a href=/>返回首頁</a>"
+            if not q or q in alt_text:
+                found_count += 1
+                R += "電影名稱：" + alt_text + "<br>"
+                R += "介紹連結：<a href='https://www.atmovies.com.tw" + item.find("a").get("href") + "'>點我觀看</a><br>"
+                R += "<img src='https://www.atmovies.com.tw" + item.find("img").get("src") + "' width='150'><br><br>"
+        except:
+            continue
+
+    if found_count == 0 and q:
+        R += f"找不到關於「{q}」的電影。<br>"
+    
+    R += "<br><a href='/'>回首頁</a>"
+    return R 
 
 @app.route("/spider")
 def spider():

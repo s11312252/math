@@ -7,12 +7,15 @@ Data.encoding = "utf-8"
 #print(Data.text)
 sp = BeautifulSoup(Data.text, "html.parser")
 result=sp.select(".filmListAllX li")
-for item in result:
-	print(item.find("img").get("alt"))
-	print("https://www.atmovies.com.tw"+item.find("a").get("href"))
-	print("https://www.atmovies.com.tw"+item.find("img").get("src"))
+q = input("請輸入片名關鍵字:")
 
-	print()
+for item in result:
+	if q in item.find("img").get("alt"):
+		print(item.find("img").get("alt"))
+		print("https://www.atmovies.com.tw"+item.find("a").get("href"))
+		print("https://www.atmovies.com.tw"+item.find("img").get("src"))
+
+		print()
 
 
 
