@@ -6,9 +6,9 @@ Data.encoding = "utf-8"
 
 print(Data.text)
 sp = BeautifulSoup(Data.text, "html.parser")
-result=sp.select("td")
+result=sp.find("a")
 print(result)
 
 for i in result:
-	print(item)
+	print(item.text)
 	print()

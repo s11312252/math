@@ -6,9 +6,5 @@ Data.encoding = "utf-8"
 
 print(Data.text)
 sp = BeautifulSoup(Data.text, "html.parser")
-result=sp.select("td")
-print(result)
-
-for i in result:
-	print(item)
-	print()
+result=sp.find(id = "h2text")
+print(result.text)
