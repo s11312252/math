@@ -28,7 +28,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    link = "<h1>歡迎來到陳芯霈的網站20260409</h1><hr>"
+    link = "<h1>歡迎來到陳芯霈的網站</h1><hr>"
     link += "<a href=/mis>課程</a><hr>"
     link += "<a href=/today>時間</a><hr>"
     link += "<a href=/me>關於我</a><hr>"
@@ -42,7 +42,10 @@ def index():
     link += "<br><a href='/movie1'>爬蟲即將上映電影</a><hr>"
     link += "<br><a href='/spiderMovie'>爬取並更新電影資料</a><hr>"
     link += "<br><a href='/searchMovie'>搜尋資料庫中的電影</a><hr>"
-    link += "<br><a href='/road'>台中市十大肇事路口</a><hr>"
+    link += "<br><a href='/road1'>台中市十大肇事路口案件</a><hr>"
+    link += "<br><a href='/road'>台中市十大肇事路口查詢</a><hr>"
+
+
 
 
     return link
@@ -99,7 +102,7 @@ def road():
                     results = f"<div style='color:red;'>連線失敗第 {i+1} 次：{str(e)}<br>目前政府伺服器拒絕您的 IP 連線，建議換個網路試試看。</div>"
 
     html = f"""
-    <h1>台中市易肇事路口查詢</h1>
+    <h1>台中市易肇事路口查詢(陳芯霈)</h1>
     <form action="/road" method="get">
         請輸入路名：<input type="text" name="q" value="{q if q else ''}">
         <button type="submit">查詢</button>
@@ -109,6 +112,60 @@ def road():
     <br><a href="/">返回首頁</a>
     """
     return html
+
+@app.route("/road1", methods=["GET", "POST"])
+def road1():
+    # 建立網頁標題與基礎 HTML
+    R = "<h1>十大肇事路口(113年10月)(陳芯霈)</h1><br>"
+   
+    import requests, json
+    import urllib3
+    from flask import request
+
+    # 隱藏 SSL 安全警告（因為我們會使用 verify=False）
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    url = "https://datacenter.taichung.gov.tw/swagger/OpenData/a1b899c0-511f-4e3d-b22b-814982a97e41"
+   
+    # 模擬更完整的瀏覽器標頭
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json'
+    }
+   
+    try:
+        # verify=False 解決憑證問題, timeout=10 防止卡死
+        response = requests.get(url, headers=headers, verify=False, timeout=10)
+        response.encoding = 'utf-8' # 確保中文不變亂碼
+       
+        # 轉換 JSON
+        JsonData = response.json()
+       
+        # 從網址取得 q 參數，例如：/road?q=中科路
+        Road_query = request.args.get("q", "")
+
+        found = False
+        for item in JsonData:
+            # 判斷路口名稱是否包含搜尋關鍵字
+            if Road_query in item.get("路口名稱", ""):
+                # 注意：這裡使用 f-string 時，item['路口名稱'] 要用單引號，外面用雙引號
+                R += f"<b>{item['路口名稱']}</b>，原因：{item['主要肇因']} <br>"
+                found = True
+       
+        if not found:
+            if Road_query == "":
+                R += "<i>請在網址後加上 ?q=路名 來搜尋，或查看下方所有列表：</i><br><br>"
+                # 如果沒搜關鍵字，也可以考慮顯示前幾筆或全部
+                for item in JsonData[:10]: # 先顯示前10筆示範
+                    R += f"{item['路口名稱']} <br>"
+            else:
+                R += f"抱歉，查無關於「{Road_query}」的相關資料！<br>"
+    except Exception as e:
+        R += f"<div style='color:red;'>連線錯誤：{str(e)}</div>"
+
+    R += "<br><hr><a href='/'>回首頁</a>"
+    return R
+
 
 @app.route("/searchMovie", methods=["GET", "POST"])
 def searchMovie():
