@@ -40,10 +40,105 @@ def index():
     link += "<br><a href=/read2>讀取Firestore資料(根據姓名關鍵字)</a><br>"
     link += "<br><a href='/spider'>執行爬蟲 (課程資料)</a><hr>"
     link += "<br><a href='/movie1'>爬蟲即將上映電影</a><hr>"
+    link += "<br><a href='/spiderMovie'>爬取並更新電影資料</a><hr>"
+    link += "<br><a href='/searchMovie'>搜尋資料庫中的電影</a><hr>"
+
+
 
     return link
 
 
+@app.route("/searchMovie", methods=["GET", "POST"])
+def searchMovie():
+    q = request.values.get("q")
+    db = firestore.client()
+    collection_ref = db.collection("即將上映電影")
+    docs = collection_ref.get()
+
+    # 標題與搜尋表單
+    R = "<h1>資料庫電影查詢</h1>"
+    
+    # 這裡加入一個提示訊息，顯示目前是在查看資料庫資料
+    if q:
+        R += f"<p style='color:green;'><b>已完成「{q}」的關鍵字查詢：</b></p>"
+    else:
+        R += "<p style='color:blue;'><b>目前顯示資料庫內所有電影資料：</b></p>"
+
+    R += f"""
+    <form action="/searchMovie" method="get">
+        <input type="text" name="q" placeholder="輸入片名關鍵字" value="{q if q else ''}">
+        <button type="submit">搜尋</button>
+    </form><hr>
+    """
+
+    # 建立表格標題
+    R += "<table border='1' style='border-collapse: collapse; width:100%; text-align:center;'>"
+    R += "<tr><th>編號</th><th>海報</th><th>片名</th><th>上映日期</th><th>介紹頁</th></tr>"
+
+    found_count = 0
+    for doc in docs:
+        m = doc.to_dict()
+        if not q or q in m.get("title", ""):
+            found_count += 1
+            R += f"""
+            <tr>
+                <td>{found_count}</td>
+                <td><img src="{m.get('image')}" width="100"></td>
+                <td>{m.get('title')}</td>
+                <td>{m.get('release_date')}</td>
+                <td><a href="{m.get('link')}" target="_blank">點我觀看</a></td>
+            </tr>
+            """
+    
+    R += "</table>"
+
+    # 如果完全沒找到資料的顯示
+    if found_count == 0:
+        if q:
+            R = f"<h1>查詢結果</h1><p>找不到關於「{q}」的電影。</p>"
+        else:
+            R = f"<h1>查詢結果</h1><p>資料庫目前空空如也，請先執行爬蟲存入資料。</p>"
+    
+    R += "<br><a href='/'>回首頁</a>"
+    return R
+@app.route("/spiderMovie")
+def spiderMovie():
+    url = "https://www.atmovies.com.tw/movie/next/"
+    Data = requests.get(url)
+    Data.encoding = "utf-8"
+    sp = BeautifulSoup(Data.text, "html.parser")
+    result = sp.select(".filmListAllX li")
+
+    db = firestore.client()
+    collection_ref = db.collection("即將上映電影")
+    
+    count = 0
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    for item in result:
+        try:
+            # 擷取資料
+            name = item.find("img").get("alt")
+            link = "https://www.atmovies.com.tw" + item.find("a").get("href")
+            img = "https://www.atmovies.com.tw" + item.find("img").get("src")
+            # 抓取上映日期文字
+            date_text = item.get_text().split("上映日期：")[-1].strip() if "上映日期：" in item.get_text() else "尚未公佈"
+            
+            # 寫入資料庫
+            doc_data = {
+                "title": name,
+                "link": link,
+                "image": img,
+                "release_date": date_text,
+                "update_time": now
+            }
+            # 使用 set (若片名相同會覆蓋更新，不重複建立)
+            collection_ref.document(name).set(doc_data)
+            count += 1
+        except:
+            continue
+
+    return f"<h1>爬蟲任務完成</h1><p>最近更新日期：{now}</p><p>共爬取並存儲了 {count} 部電影資料。</p><br><a href='/'>回首頁</a>"
 
 @app.route("/movie1")
 def movie():
